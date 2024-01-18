@@ -12,12 +12,14 @@ from tqdm import trange
 from PIL import Image
 from torchvision.transforms import PILToTensor
 from src.models.dift_sd import SDFeaturizer
-data_path = "./dataset"
+from src.models.dift_adm import ADMFeaturizer
+
+import argparse
 
 category = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
 ########################## png #########################################
-def download_data():
+def download_data(data_path):
     
     train_data = torchvision.datasets.CIFAR10(data_path,  train=True, download=True, transform=None)
     test_data = torchvision.datasets.CIFAR10(data_path, train=False, download=True, transform=None)
@@ -39,7 +41,7 @@ def download_data():
         file_path = os.path.join(split_path, f"{i:0>10}_{label}.png")
         image.save(file_path)
 
-def get_SD_feature():
+def get_SD_feature(data_path = "./dataset_sd"):
     dift = SDFeaturizer('./huggingface')
     
     for split in ['train', 'test']:
@@ -67,10 +69,45 @@ def get_SD_feature():
         print(Y.shape)
         torch.save((X,Y), os.path.join(data_path, f'{split}.pt'))
 
+def get_ADM_feature(data_path = "./dataset_adm"):
+    dift = ADMFeaturizer()
+    
+    for split in ['train', 'test']:
+        split_path = os.path.join(data_path, split)   
+        X, Y = [], []
+        for name in tqdm(os.listdir(split_path)):
+            img = Image.open(os.path.join(split_path, name)).convert('RGB')
+            img = img.resize((32,32))
+            img_tensor = (PILToTensor()(img) / 255.0 - 0.5) * 2
+            y = int(name[-5])
+            ft = dift.forward(
+                    img_tensor,                                 # 原始的图片
+                    t=101,                                      # 
+                    up_ft_index=0, 
+                    ensemble_size=2
+                )
+            
+            X.append(ft.squeeze(0).cpu().reshape(-1)) # [c, h, w]
+            Y.append(y)
+        
+        X = torch.stack(X)      # (n, 1280)
+        print(X.shape)
+        Y = torch.IntTensor(Y)  # (n,)
+        print(Y.shape)
+        torch.save((X,Y), os.path.join(data_path, f'{split}.pt'))
 
 if __name__ == '__main__':
-    download_data()
-    get_SD_feature+()
+    parser = argparse.ArgumentParser() 
+    parser.add_argument("--model", type=str, default="sd")
+    parser.add_argument("--datadir", type=str, default="./dataset")
+    #parser.add_argument("--download", type=bool, defualt=True)
+    args = parser.parse_args()
+    data_path = args.datadir
+    #download_data(data_path)
+    if args.model == "sd":
+        get_SD_feature(data_path)
+    else:
+        get_ADM_feature(data_path)
     x,y = torch.load(os.path.join(data_path, 'train.pt'))
     print(x.shape, y.shape)
     x,y = torch.load(os.path.join(data_path, 'test.pt'))

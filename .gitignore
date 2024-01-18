@@ -1,5 +1,5 @@
 cache/
-dataset/
+dataset*/
 huggingface/
 train_logs/
-
+guided-diffusion/models/
