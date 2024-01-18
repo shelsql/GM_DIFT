@@ -7,8 +7,10 @@ from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR, CosineAnnealingWarmRestarts, StepLR
 
-train_x, train_y = torch.load("./dataset/train.pt") # 50000
-test_x, test_y = torch.load("./dataset/test.pt") # 10000
+import os
+
+train_x, train_y = torch.load("./dataset_adm/train.pt") # 50000
+test_x, test_y = torch.load("./dataset_adm/test.pt") # 10000
 
 
 train_data = TensorDataset(train_x, train_y.long())
@@ -23,6 +25,7 @@ test_dataloader = DataLoader(test_data, batch_size=64, shuffle=True ,drop_last=T
 class Module(nn.Module):
     def __init__(self):
         super(Module, self).__init__()
+        '''
         self.model = nn.Sequential(
             nn.Linear(1280, 512),
             nn.SiLU(),
@@ -32,6 +35,8 @@ class Module(nn.Module):
             nn.SiLU(),
             nn.Linear(64, 10)
         )
+        '''
+        self.model = nn.Linear(1024, 10)
  
     def forward(self, x):
         x = self.model(x)
@@ -55,6 +60,8 @@ def train_model():
     epoch = 200
     # 储存路径
     work_dir = './train_logs'
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
     # 添加tensorboard
     writer = SummaryWriter("{}/logs".format(work_dir))
     
@@ -67,6 +74,9 @@ def train_model():
             if torch.cuda.is_available():
                 imgs = imgs.cuda()
                 targets = targets.cuda()
+            B, C, H, W = imgs.shape
+            imgs = imgs.reshape(B, C, H*W)
+            imgs = torch.mean(imgs, axis = 2)
             outputs = module(imgs)
             loss = loss_fn(outputs, targets)
 
@@ -77,7 +87,7 @@ def train_model():
     
             train_step = len(train_dataloader)*i+step+1
             if train_step % 100 == 0:
-                print("train time：{}, Loss: {}".format(train_step, loss.item()))
+                print("train time: {}, Loss: {}".format(train_step, loss.item()))
                 writer.add_scalar("train_loss", loss.item(), train_step)
     
         scheduler.step()
@@ -91,6 +101,9 @@ def train_model():
                 if torch.cuda.is_available():
                     imgs = imgs.cuda()
                     targets = targets.cuda()
+                B, C, H, W = imgs.shape
+                imgs = imgs.reshape(B, C, H*W)
+                imgs = torch.mean(imgs, axis = 2)
                 outputs = module(imgs)
                 loss = loss_fn(outputs, targets)
                 total_test_loss = total_test_loss + loss.item()

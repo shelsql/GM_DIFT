@@ -72,12 +72,12 @@ def get_SD_feature(data_path = "./dataset_sd"):
 def get_ADM_feature(data_path = "./dataset_adm"):
     dift = ADMFeaturizer()
     
-    for split in ['train', 'test']:
+    for split in ['test', 'train']:
         split_path = os.path.join(data_path, split)   
         X, Y = [], []
         for name in tqdm(os.listdir(split_path)):
             img = Image.open(os.path.join(split_path, name)).convert('RGB')
-            img = img.resize((32,32))
+            img = img.resize((256,256))
             img_tensor = (PILToTensor()(img) / 255.0 - 0.5) * 2
             y = int(name[-5])
             ft = dift.forward(
@@ -86,11 +86,12 @@ def get_ADM_feature(data_path = "./dataset_adm"):
                     up_ft_index=0, 
                     ensemble_size=2
                 )
+            #print(ft.shape)# 1, 1024, 8, 8
             
-            X.append(ft.squeeze(0).cpu().reshape(-1)) # [c, h, w]
+            X.append(ft.squeeze(0).cpu()) #1024, 8, 8
             Y.append(y)
         
-        X = torch.stack(X)      # (n, 1280)
+        X = torch.stack(X)      # (n, 1024, 8, 8)
         print(X.shape)
         Y = torch.IntTensor(Y)  # (n,)
         print(Y.shape)
