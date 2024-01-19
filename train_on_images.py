@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR, CosineAnnealingWarmRestarts, StepLR
 
+import torchvision.transforms as transforms
 import os
 import argparse
 
@@ -14,7 +15,7 @@ import argparse
 class Module(nn.Module):
     def __init__(self):
         super(Module, self).__init__()
-        self.model = nn.Linear(1024, 10)
+        self.model = nn.Linear(3072, 10)
  
     def forward(self, x):
         x = self.model(x)
@@ -22,18 +23,17 @@ class Module(nn.Module):
 
 
 def train_model(datadir, epoch, lr, log_dir, ckpt_dir):
-    train_x, train_y = torch.load(os.path.join(datadir, "train.pt")) # 50000
-    test_x, test_y = torch.load(os.path.join(datadir, "test.pt")) # 10000
-
-
-    train_data = TensorDataset(train_x, train_y.long())
-    test_data = TensorDataset(test_x, test_y.long())
-
+    transform = transforms.Compose(
+        [transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    train_data = torchvision.datasets.CIFAR10(root=datadir, train=True,
+                                            download=False, transform=transform)
+    test_data = torchvision.datasets.CIFAR10(root=datadir, train=False,
+                                        download=False, transform=transform)
 
     # 利用 DataLoader 来加载数据集
     train_dataloader = DataLoader(train_data, batch_size=64, shuffle=True ,drop_last=True)
     test_dataloader = DataLoader(test_data, batch_size=64, shuffle=True ,drop_last=True)
- 
     # 创建网络模型
     module = Module()
     if torch.cuda.is_available():
@@ -57,8 +57,8 @@ def train_model(datadir, epoch, lr, log_dir, ckpt_dir):
             if torch.cuda.is_available():
                 imgs = imgs.cuda()
                 targets = targets.cuda()
-            #B, C, H, W = imgs.shape
-            #imgs = imgs.reshape(B, C, H*W)
+            B, H, W, C = imgs.shape
+            imgs = imgs.reshape(B, H*W*C)
             #imgs = torch.mean(imgs, axis = 2)
             outputs = module(imgs)
             loss = loss_fn(outputs, targets)
@@ -84,8 +84,8 @@ def train_model(datadir, epoch, lr, log_dir, ckpt_dir):
                 if torch.cuda.is_available():
                     imgs = imgs.cuda()
                     targets = targets.cuda()
-                #B, C, H, W = imgs.shape
-                #imgs = imgs.reshape(B, C, H*W)
+                B, H, W, C = imgs.shape
+                imgs = imgs.reshape(B, H*W*C)
                 #imgs = torch.mean(imgs, axis = 2)
                 outputs = module(imgs)
                 loss = loss_fn(outputs, targets)
@@ -110,7 +110,7 @@ def train_model(datadir, epoch, lr, log_dir, ckpt_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--datadir", type=str, default="dataset_adm")
+    parser.add_argument("--datadir", type=str, default="cifar10")
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--lr", type=float, default=1e-4)
     args = parser.parse_args()

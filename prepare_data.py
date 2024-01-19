@@ -69,7 +69,7 @@ def get_SD_feature(data_path = "./dataset_sd"):
         print(Y.shape)
         torch.save((X,Y), os.path.join(data_path, f'{split}.pt'))
 
-def get_ADM_feature(data_path = "./dataset_adm"):
+def get_ADM_feature(data_path="./cifar10", save_path="./dataset_adm", t=101, up_ft_index=0, ensemble_size=2):
     dift = ADMFeaturizer()
     
     for split in ['test', 'train']:
@@ -82,33 +82,44 @@ def get_ADM_feature(data_path = "./dataset_adm"):
             y = int(name[-5])
             ft = dift.forward(
                     img_tensor,                                 # 原始的图片
-                    t=101,                                      # 
-                    up_ft_index=0, 
-                    ensemble_size=2
+                    t=t,                                      # 
+                    up_ft_index=up_ft_index, 
+                    ensemble_size=ensemble_size
                 )
             #print(ft.shape)# 1, 1024, 8, 8
+            B, C, H, W = ft.shape
+            ft = ft.reshape(C, H*W)
+            ft = torch.mean(ft, axis=1).cpu()
             
-            X.append(ft.squeeze(0).cpu()) #1024, 8, 8
+            X.append(ft) #1024
             Y.append(y)
         
-        X = torch.stack(X)      # (n, 1024, 8, 8)
+        X = torch.stack(X)      # (n, 1024)
         print(X.shape)
         Y = torch.IntTensor(Y)  # (n,)
         print(Y.shape)
-        torch.save((X,Y), os.path.join(data_path, f'{split}.pt'))
+        torch.save((X,Y), os.path.join(save_path, f'{split}.pt'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser() 
-    parser.add_argument("--model", type=str, default="sd")
-    parser.add_argument("--datadir", type=str, default="./dataset")
+    parser.add_argument("--model", type=str, default="adm")
+    parser.add_argument("--datadir", type=str, default="./cifar10")
+    parser.add_argument("--savedir", type=str, default="./")
+    parser.add_argument("-t", type=int, default=101)
+    parser.add_argument("--up_ft_index", type=int, default=0)
+    parser.add_argument("--ensemble_size", type=int, default=2)
     #parser.add_argument("--download", type=bool, defualt=True)
     args = parser.parse_args()
+    run_name = "dataset_" + args.model + "_t" + str(args.t) + "_up" + str(args.up_ft_index)
     data_path = args.datadir
+    save_path = os.path.join(args.savedir, run_name)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     #download_data(data_path)
     if args.model == "sd":
         get_SD_feature(data_path)
     else:
-        get_ADM_feature(data_path)
+        get_ADM_feature(data_path, save_path, t = args.t, up_ft_index = args.up_ft_index, ensemble_size = args.ensemble_size)
     x,y = torch.load(os.path.join(data_path, 'train.pt'))
     print(x.shape, y.shape)
     x,y = torch.load(os.path.join(data_path, 'test.pt'))

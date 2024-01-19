@@ -3,3 +3,6 @@ dataset*/
 huggingface/
 train_logs/
 guided-diffusion/models/
+logs_train/
+cifar10/
+checkpoints/
