@@ -14,7 +14,13 @@ import argparse
 class Module(nn.Module):
     def __init__(self):
         super(Module, self).__init__()
-        self.model = nn.Linear(1024, 10)
+        self.model = nn.Sequential(*[
+            nn.Linear(1024, 256),
+            nn.ReLU(),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Linear(64, 10)
+        ])
  
     def forward(self, x):
         x = self.model(x)
