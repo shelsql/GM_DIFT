@@ -1,6 +1,8 @@
 # Generative Models Final Project
 ## Image Classification with Diffusion Features
 
+By 梁世谦，时有恒，刘知一，周正
+
 ## Environment Setup
 Ubuntu 20.04  CUDA Version: 12.2
 
@@ -23,3 +25,14 @@ python train.py --datadir path_to_extracted_features --epochs --lr
 
 python test.py
 ```
+
+
+### 分工
+
+梁世谦：代码实现，运行实验，撰写报告
+
+时有恒：代码实现，运行实验
+
+刘知一：代码实现，结果可视化
+
+周正：代码实现，结果可视化
