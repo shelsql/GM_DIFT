@@ -115,7 +115,7 @@ if __name__ == '__main__':
     save_path = os.path.join(args.savedir, run_name)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    #download_data(data_path)
+    download_data(data_path)
     if args.model == "sd":
         get_SD_feature(data_path)
     else:

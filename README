@@ -5,24 +5,20 @@ ubuntu 20.04  CUDA Version: 12.2
 
 ``` bash
 conda env create -f environment.yml
-pip install tensorboardX
+pip install tensorboardX scikit-learn
 conda activate dift
 ```
 
 ## train/test steps
 
 ``` bash
-python get_stablediffusion.py   # about 35GB
+git clone git@github.com:openai/guided-diffusion.git
 
-python prepare_data.py          # about 50mins, and the preprocessed data is saved in `./dataset`
+bash get_adm.sh
 
-python train.py
+python prepare_data.py --datadir path_to_cifar_10 --savedir dataset_parent_dir -t --up_ft_index --ensemble
+
+python train.py --datadir path_to_extracted_features --epochs --lr
 
 python test.py
 ```
-
-## TODO
-1. 直接图片展开
-2. Adm
-3. 不同的t
-4. Unet不同的层
