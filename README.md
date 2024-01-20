@@ -1,7 +1,8 @@
-# dift
+# Generative Models Final Project
+## Image Classification with Diffusion Features
 
-## setup environment
-ubuntu 20.04  CUDA Version: 12.2
+## Environment Setup
+Ubuntu 20.04  CUDA Version: 12.2
 
 ``` bash
 conda env create -f environment.yml
@@ -9,7 +10,7 @@ pip install tensorboardX scikit-learn
 conda activate dift
 ```
 
-## train/test steps
+## Quick Start
 
 ``` bash
 git clone git@github.com:openai/guided-diffusion.git
